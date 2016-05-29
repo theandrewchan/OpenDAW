@@ -41,7 +41,9 @@ jQuery.removeFromArray = function(value, arr) {
 var globalNumberOfTracks;
 var globalWavesurfers = [];
 
-var wavesurfer = (function () {
+//A - what is the point of assigning the anonymous closure to the var wavesurfer? wavesurfer seems to be undefined in console...
+//A - on renaming the variable to 'wavesurferrrrr' nothing seems to change. TODO - remove assignment, seems uneccessary
+(function () {
     'use strict';
 
     var createWavesurfer = function (song) {
@@ -49,65 +51,67 @@ var wavesurfer = (function () {
         var sampleNumber = 0;
         var sampleUrl = song.url.split("/");
         var sampleTitle = sampleUrl[sampleUrl.length-1];
-	var obj;
+		var obj;
+
         $("#libraryList").append("<li id=librarySample" + song.id +" class=\"librarySample\" data-id="+song.id+" data-url="+song.url+" data-duration="+song.duration+"><a href=\"#\">" + sampleTitle + "</a></li>");
         $("#librarySample" + song.id).draggable({
-	    revert: true,
-	    helper: "clone",
-	    start: function(event, ui) { $(this).css("z-index", 10); }
-	});
+		    revert: true,
+		    helper: "clone",
+		    start: function(event, ui) { $(this).css("z-index", 10); }
+		});
+
         $.each(startTimes, function(){
-	    if(sampleNumber == 0){
-		obj = ({bufferURL: song.url, id: song.id, startTimes: song.startTime, track: song.track});
-	    }
-	    var currentStartTime = song.startTime[sampleNumber];
-            var span = document.createElement('span');
-            span.id = "sample" + song.id + "Span" + sampleNumber;
-            var canvas = document.createElement('canvas');
-	    canvas.className = "sample";
-            canvas.id = "sample" + song.id + "Canvas" + sampleNumber;
-            $("#track"+song.track).append(span);
-            $("#sample" + song.id + "Span" + sampleNumber).append(canvas);
-            $("#sample" + song.id + "Span" + sampleNumber).width(parseFloat(song.duration) * ((pixelsPer4*bpm)/60));
-            canvas.width = parseFloat(song.duration) * ((pixelsPer4*bpm)/60);
-            canvas.height = 80;
-            $( "#sample" + song.id + "Span" + sampleNumber).attr('data-startTime',song.startTime[sampleNumber]);
-            $( "#sample" + song.id + "Span" + sampleNumber).css('left',"" + parseInt(currentStartTime*pixelsPer16) + "px");
-	    $( "#sample" + song.id + "Span" + sampleNumber).css('position','absolute');
-            $( "#sample" + song.id + "Span" + sampleNumber).draggable({
-                axis: "x",
-                containment: "parent",
-                grid: [pixelsPer16, 0],		//grid snaps to 16th notes
-                stop: function() {
-		    //get rid of old entry in table
-		    var currentStartBar = $(this).attr('data-startTime');
-		    times[currentStartBar] = jQuery.removeFromArray(song.id, times[currentStartBar]);
-                    $(this).attr('data-startTime',parseInt($(this).css('left'))/pixelsPer16);
-		    var newStartTime = $(this).attr('data-startTime');
-		    if(times[newStartTime] == null){
-			times[newStartTime] = [{id: song.id, track: song.track}];
-		    } else {
-			times[newStartTime].push({id: song.id, track: song.track});
+		    if(sampleNumber == 0){
+			obj = ({bufferURL: song.url, id: song.id, startTimes: song.startTime, track: song.track});
 		    }
-                }
-            });
-	    $( "#sample" + song.id + "Span" + sampleNumber ).resizable({
-		helper: "ui-resizable-helper",
-		handles: "e",
-		grid: pixelsPer16
-	    });
-            var wavesurfer = Object.create(WaveSurfer);
-            wavesurfer.init({
-                canvas: canvas,
-                waveColor: '#08c',
-                progressColor: '#08c',
-                loadingColor: 'purple',
-                cursorColor: 'navy',
-                audioContext: ac
-            });
-            wavesurfer.load(song.url);
-	    globalWavesurfers.push(wavesurfer);
-            sampleNumber++;
+		    var currentStartTime = song.startTime[sampleNumber];
+	            var span = document.createElement('span');
+	            span.id = "sample" + song.id + "Span" + sampleNumber;
+	            var canvas = document.createElement('canvas');
+		    canvas.className = "sample";
+	            canvas.id = "sample" + song.id + "Canvas" + sampleNumber;
+	            $("#track"+song.track).append(span);
+	            $("#sample" + song.id + "Span" + sampleNumber).append(canvas);
+	            $("#sample" + song.id + "Span" + sampleNumber).width(parseFloat(song.duration) * ((pixelsPer4*bpm)/60));
+	            canvas.width = parseFloat(song.duration) * ((pixelsPer4*bpm)/60);
+	            canvas.height = 80;
+	            $( "#sample" + song.id + "Span" + sampleNumber).attr('data-startTime',song.startTime[sampleNumber]);
+	            $( "#sample" + song.id + "Span" + sampleNumber).css('left',"" + parseInt(currentStartTime*pixelsPer16) + "px");
+		    $( "#sample" + song.id + "Span" + sampleNumber).css('position','absolute');
+	            $( "#sample" + song.id + "Span" + sampleNumber).draggable({
+	                axis: "x",
+	                containment: "parent",
+	                grid: [pixelsPer16, 0],		//grid snaps to 16th notes
+	                stop: function() {
+			    //get rid of old entry in table
+			    var currentStartBar = $(this).attr('data-startTime');
+			    times[currentStartBar] = jQuery.removeFromArray(song.id, times[currentStartBar]);
+	                    $(this).attr('data-startTime',parseInt($(this).css('left'))/pixelsPer16);
+			    var newStartTime = $(this).attr('data-startTime');
+			    if(times[newStartTime] == null){
+				times[newStartTime] = [{id: song.id, track: song.track}];
+			    } else {
+				times[newStartTime].push({id: song.id, track: song.track});
+			    }
+	                }
+	            });
+		    $( "#sample" + song.id + "Span" + sampleNumber ).resizable({
+			helper: "ui-resizable-helper",
+			handles: "e",
+			grid: pixelsPer16
+		    });
+	            var wavesurfer = Object.create(WaveSurfer);
+	            wavesurfer.init({
+	                canvas: canvas,
+	                waveColor: '#08c',
+	                progressColor: '#08c',
+	                loadingColor: 'purple',
+	                cursorColor: 'navy',
+	                audioContext: ac
+	            });
+	            wavesurfer.load(song.url);
+		    globalWavesurfers.push(wavesurfer);
+	            sampleNumber++;
         });
 
         return obj;
@@ -115,60 +119,61 @@ var wavesurfer = (function () {
 
 
     var processData = function (json) {
-	var numberOfTracks = parseInt(json.projectInfo.tracks);
-	effects = json.projectInfo.effects;
-	//create track-specific nodes
-	globalNumberOfTracks = numberOfTracks;
-	createNodes(numberOfTracks);
+		var numberOfTracks = parseInt(json.projectInfo.tracks);
+		effects = json.projectInfo.effects;
+		//create track-specific nodes
+		globalNumberOfTracks = numberOfTracks;
+		createNodes(numberOfTracks);
 
-	for(var i=0;i<numberOfTracks;i++){
-	   var currentTrackNumber = i+1;
-	    createTrack(currentTrackNumber);
-	    $.each(effects[i],function(){
-		if(this.type == "Compressor"){
-		    var trackCompressor = ac.createDynamicsCompressor();
-		    var inputNode = trackInputNodes[currentTrackNumber];
-		    var volumeNode = trackVolumeGains[currentTrackNumber];
-		    inputNode.disconnect();
-		    inputNode.connect(trackCompressor);
-		    trackCompressor.connect(volumeNode);
-		    trackCompressors[currentTrackNumber] = trackCompressor;
-		}
-		if(this.type == "Filter"){
-		    var trackFilter = ac.createBiquadFilter();
-		    var inputNode = trackInputNodes[currentTrackNumber];
-		    var volumeNode = trackVolumeGains[currentTrackNumber];
-		    inputNode.disconnect();
-		    inputNode.connect(trackFilter);
-		    trackFilter.connect(volumeNode);
-		    trackFilters[currentTrackNumber] = trackFilter;
-		}
-	    });
+		for(var i=0;i<numberOfTracks;i++){
+		   var currentTrackNumber = i+1;
+		    createTrack(currentTrackNumber);
+		    $.each(effects[i],function(){
+			if(this.type == "Compressor"){
+			    var trackCompressor = ac.createDynamicsCompressor();
+			    var inputNode = trackInputNodes[currentTrackNumber];
+			    var volumeNode = trackVolumeGains[currentTrackNumber];
+			    inputNode.disconnect();
+			    inputNode.connect(trackCompressor);
+			    trackCompressor.connect(volumeNode);
+			    trackCompressors[currentTrackNumber] = trackCompressor;
+			}
+			if(this.type == "Filter"){
+			    var trackFilter = ac.createBiquadFilter();
+			    var inputNode = trackInputNodes[currentTrackNumber];
+			    var volumeNode = trackVolumeGains[currentTrackNumber];
+			    inputNode.disconnect();
+			    inputNode.connect(trackFilter);
+			    trackFilter.connect(volumeNode);
+			    trackFilters[currentTrackNumber] = trackFilter;
+			}
+		    });
 
-	}
-	//wavesurfers is array of all tracks
-        var wavesurfers = json.samples.map(createWavesurfer);
-	$.each(wavesurfers, function(){
-	    var currentSample = this;
-	    //if they are in workspace...
-	    if(currentSample != undefined){
-		//load the buffer
-		load(currentSample.bufferURL, currentSample.id);
-		//store the times
-		$.each(currentSample.startTimes, function(){
-		    var currentStartTime = this;
-		 if(times[currentStartTime] == null){
-			times[currentStartTime] = [{id: currentSample.id, track: currentSample.track}];
-		    } else {
-			times[currentStartTime].push({id: currentSample.id, track: currentSample.track});
+		}
+		//wavesurfers is array of all tracks
+	        var wavesurfers = json.samples.map(createWavesurfer);
+
+		$.each(wavesurfers, function(){
+		    var currentSample = this;
+		    //if they are in workspace...
+		    if(currentSample != undefined){
+			//load the buffer
+			load(currentSample.bufferURL, currentSample.id);
+			//store the times
+			$.each(currentSample.startTimes, function(){
+			    var currentStartTime = this;
+			 if(times[currentStartTime] == null){
+				times[currentStartTime] = [{id: currentSample.id, track: currentSample.track}];
+			    } else {
+				times[currentStartTime].push({id: currentSample.id, track: currentSample.track});
+			    }
+			});
 		    }
 		});
-	    }
-	});
     };
 
 
-
+    //A - get and read a JSON of sample data, ten load in the actual sample files from that data
     var xhr = new XMLHttpRequest();
     xhr.onreadystatechange = function () {
         if (this.readyState == this.DONE && this.status == 200) {
@@ -186,13 +191,13 @@ function load (src, id) {
     xhr.open('GET', src, true);
     xhr.responseType = 'arraybuffer';
     xhr.addEventListener('load', function (e) {
-	ac.decodeAudioData(
-	    e.target.response,
-	    function (buffer) {
-		buffers[id] = {buffer: buffer};
-	    },
-	    Error
-	);
+		ac.decodeAudioData(
+		    e.target.response,
+		    function (buffer) {
+			buffers[id] = {buffer: buffer};
+		    },
+		    Error
+		);
     }, false);
     xhr.send();
 };
