@@ -236,200 +236,194 @@ $('body').bind('zoomOut-event', function(e){
 
 $(document).ready(function(){
     $(".effectDrag").draggable({
-	revert: true,
-	helper: "clone"
+		revert: true,
+		helper: "clone"
     });
     $("#effectSortable").sortable({
-	cancel: "canvas,input",
-	/*
-	sort: function(event, ui){
-	     console.log($( "#effectSortable" ).sortable( "toArray" ))
-	}*/
-
+		cancel: "canvas,input",
+		/*
+		sort: function(event, ui){
+		     console.log($( "#effectSortable" ).sortable( "toArray" ))
+		}*/
     });
 
     $("#trackEffects").droppable({
-	accept: ".effectDrag",
-	drop: function(event, ui){
-	    $("#"+ui.draggable[0].textContent).removeClass('hidden');
-	    if(ui.draggable[0].textContent == "Reverb"){
-		$("#reverbIrSelectKnob").val(0).trigger('change');
-		$("#reverbWetDryKnob").val(50).trigger('change');
+		accept: ".effectDrag",
+		drop: function(event, ui){
+		    $("#"+ui.draggable[0].textContent).removeClass('hidden');
+		    if(ui.draggable[0].textContent == "Reverb"){
+		    	//reset effect settings to defaults, then manually fire the change event
+				$("#reverbIrSelectKnob").val(0).trigger('change');
+				$("#reverbWetDryKnob").val(50).trigger('change');
 
 
-		var trackReverb = createTrackReverb();
-		var inputNode = trackInputNodes[activeTrack];
-		var volumeNode = trackVolumeGains[activeTrack];
+				var trackReverb = createTrackReverb();
+				var inputNode = trackInputNodes[activeTrack];
+				var volumeNode = trackVolumeGains[activeTrack];
 
-		inputNode.disconnect();
-		inputNode.connect(trackReverb[0]);
+				inputNode.disconnect();
+				inputNode.connect(trackReverb[0]);
 
-		if (trackFilters[activeTrack] != null ) {
-		    trackReverb[1].connect(trackFilters[activeTrack]);
-		}else if (trackCompressors[activeTrack != null]) {
-		    trackReverb[1].connect(trackCompressors[activeTrack]);
-		}else if (trackTremolos[activeTrack != null]) {
-		    trackReverb[1].connect(trackTremolos[activeTrack][0]);
-		}else if(trackDelays[activeTrack] != null){
-		    trackReverb[1].connect(trackDelays[activeTrack][0]);
-		}else{
-		    trackReverb[1].connect(volumeNode);
+				if (trackFilters[activeTrack] != null ) {
+				    trackReverb[1].connect(trackFilters[activeTrack]);
+				}else if (trackCompressors[activeTrack != null]) {
+				    trackReverb[1].connect(trackCompressors[activeTrack]);
+				}else if (trackTremolos[activeTrack != null]) {
+				    trackReverb[1].connect(trackTremolos[activeTrack][0]);
+				}else if(trackDelays[activeTrack] != null){
+				    trackReverb[1].connect(trackDelays[activeTrack][0]);
+				}else{
+				    trackReverb[1].connect(volumeNode);
+				}
+
+				trackReverbs[activeTrack] = trackReverb;
+				effects[activeTrack-1].push({
+				    type: "Reverb",
+				    ir:  "0",
+				    wetDry: "50"
+				});
+		    }
+		    if(ui.draggable[0].textContent == "Filter"){
+				$("#filterCutoffKnob").val(30).trigger('change');
+				$("#filterQKnob").val(1).trigger('change');
+				$("#filterTypeKnob").val(0).trigger('change');
+				var trackFilter = ac.createBiquadFilter();
+				var inputNode = trackInputNodes[activeTrack];
+				var volumeNode = trackVolumeGains[activeTrack];
+
+				if (trackReverbs[activeTrack] != null) {
+				    trackReverbs[activeTrack][1].disconnect();
+				    trackReverbs[activeTrack][1].connect(trackFilter);
+				}else {
+				    inputNode.disconnect();
+				    inputNode.connect(trackFilter);
+				}
+
+				if (trackCompressors[activeTrack] != null){
+				    trackFilter.connect(trackCompressors[activeTrack]);
+				}else if (trackTremolos[activeTrack != null]) {
+				    trackFilter.connect(trackTremolos[activeTrack][0]);
+				}else if(trackDelays[activeTrack] != null){
+				    trackFilter.connect(trackDelays[activeTrack][0]);
+				}else{
+				    trackFilter.connect(volumeNode);
+				}
+
+				trackFilters[activeTrack] = trackFilter;
+				effects[activeTrack-1].push({
+				    type: "Filter",
+				    cutoff: "30",
+				    q: "1",
+				    filterType: "0"
+				});
+		    }
+		    if(ui.draggable[0].textContent == "Compressor"){
+				$("#compressorThresholdKnob").val(-24).trigger('change');
+				$("#compressorRatioKnob").val(12).trigger('change');
+				$("#compressorAttackKnob").val(3).trigger('change');
+				var trackCompressor = ac.createDynamicsCompressor();
+				var inputNode = trackInputNodes[activeTrack];
+				var volumeNode = trackVolumeGains[activeTrack];
+
+				if (trackFilters[activeTrack] != null){
+				    trackFilters[activeTrack].disconnect();
+				    trackFilters[activeTrack].connect(trackCompressor);
+				}else if (trackReverbs[activeTrack] != null) {
+				    trackReverbs[activeTrack][1].disconnect();
+				    trackReverbs[activeTrack][1].connect(trackCompressor);
+				}else {
+				    inputNode.disconnect();
+				    inputNode.connect(trackCompressor);
+				}
+
+				 if (trackTremolos[activeTrack != null]) {
+				    trackCompressor.connect(trackTremolos[activeTrack][0]);
+				}else if (trackDelays[activeTrack] != null) {
+				    trackCompressor.connect(trackDelays[activeTrack][0]);
+				}else{
+				    trackCompressor.connect(volumeNode);
+				}
+
+				trackCompressors[activeTrack] = trackCompressor;
+				effects[activeTrack-1].push({
+				    type: "Compressor",
+				    threshold: "-24",
+				    ratio: "12",
+				    attack: ".003"
+				});
+				//console.log(effects[activeTrack-1]);
+		    }
+		    if(ui.draggable[0].textContent == "Tremolo"){
+				$("#tremoloRateKnob").val(1).trigger('change');
+				$("#tremoloDepthKnob").val(10).trigger('change');
+				var trackTremolo = createTrackTremolo();
+				var inputNode = trackInputNodes[activeTrack];
+				var volumeNode = trackVolumeGains[activeTrack];
+
+				if (trackCompressors[activeTrack] != null){
+				    trackCompressors[activeTrack].disconnect();
+				    trackCompressors[activeTrack].connect(trackTremolo[0]);
+				}else if(trackFilters[activeTrack] != null) {
+				    trackFilters[activeTrack].disconnect();
+				    trackFilters[activeTrack].connect(trackTremolo[0]);
+				}else if (trackReverbs[activeTrack] != null) {
+				    trackReverbs[activeTrack][1].disconnect();
+				    trackReverbs[activeTrack][1].connect(trackTremolo[0]);
+				}else {
+				    inputNode.disconnect();
+				    inputNode.connect(trackTremolo[0]);
+				}
+
+				if (trackDelays[activeTrack] != null) {
+				    trackTremolo[1].connect(trackDelays[activeTrack][0]);
+				}else{
+				    trackTremolo[1].connect(volumeNode);
+				}
+
+				trackTremolos[activeTrack] = trackTremolo;
+				effects[activeTrack-1].push({
+				    type: "Tremolo",
+				    rate: "1",
+				    depth: "10"
+				});
+				//console.log(effects[activeTrack-1]);
+		    }
+		    if(ui.draggable[0].textContent == "Delay"){
+				$("#delayTimeKnob").val(1).trigger('change');
+				$("#delayFeedbackKnob").val(20).trigger('change');
+				$("#delayWetDryKnob").val(50).trigger('change');
+				var trackDelay = createTrackDelay();
+				var inputNode = trackInputNodes[activeTrack];
+				var volumeNode = trackVolumeGains[activeTrack];
+
+				if (trackFilters[activeTrack] != null){
+				    trackFilters[activeTrack].disconnect();
+				    trackFilters[activeTrack].connect(trackDelay[0]);
+				}else if (trackReverbs[activeTrack] != null) {
+				    trackReverbs[activeTrack][1].disconnect();
+				    trackReverbs[activeTrack][1].connect(trackDelay[0]);
+				}else if(trackCompressors[activeTrack] != null) {
+				    trackCompressors[activeTrack].disconnect();
+				    trackCompressors[activeTrack].connect(trackDelay[0]);
+				}else if(trackTremolos[activeTrack] != null) {
+				    trackTremolos[activeTrack][1].disconnect();
+				    trackTremolos[activeTrack][1].connect(trackDelay[0]);
+				}else{
+				    inputNode.disconnect();
+				    inputNode.connect(trackDelay[0]);
+				}
+
+				trackDelay[1].connect(volumeNode);
+
+				trackDelays[activeTrack] = trackDelay;
+				effects[activeTrack-1].push({
+				    type: "Delay",
+				    time: "1",
+				    feedback: "20",
+				    wetDry: "50"
+				});
+		    }
 		}
-
-		trackReverbs[activeTrack] = trackReverb;
-		effects[activeTrack-1].push({
-		    type: "Reverb",
-		    ir:  "0",
-		    wetDry: "50"
-		});
-	    }
-	    if(ui.draggable[0].textContent == "Filter"){
-		$("#filterCutoffKnob").val(30).trigger('change');
-		$("#filterQKnob").val(1).trigger('change');
-		$("#filterTypeKnob").val(0).trigger('change');
-		var trackFilter = ac.createBiquadFilter();
-		var inputNode = trackInputNodes[activeTrack];
-		var volumeNode = trackVolumeGains[activeTrack];
-
-		if (trackReverbs[activeTrack] != null) {
-		    trackReverbs[activeTrack][1].disconnect();
-		    trackReverbs[activeTrack][1].connect(trackFilter);
-		}else {
-		    inputNode.disconnect();
-		    inputNode.connect(trackFilter);
-		}
-
-		if (trackCompressors[activeTrack] != null){
-		    trackFilter.connect(trackCompressors[activeTrack]);
-		}else if (trackTremolos[activeTrack != null]) {
-		    trackFilter.connect(trackTremolos[activeTrack][0]);
-		}else if(trackDelays[activeTrack] != null){
-		    trackFilter.connect(trackDelays[activeTrack][0]);
-		}else{
-		    trackFilter.connect(volumeNode);
-		}
-
-		trackFilters[activeTrack] = trackFilter;
-		effects[activeTrack-1].push({
-		    type: "Filter",
-		    cutoff: "30",
-		    q: "1",
-		    filterType: "0"
-		});
-	    }
-	    if(ui.draggable[0].textContent == "Compressor"){
-		$("#compressorThresholdKnob").val(-24).trigger('change');
-		$("#compressorRatioKnob").val(12).trigger('change');
-		$("#compressorAttackKnob").val(3).trigger('change');
-		var trackCompressor = ac.createDynamicsCompressor();
-		var inputNode = trackInputNodes[activeTrack];
-		var volumeNode = trackVolumeGains[activeTrack];
-
-		if (trackFilters[activeTrack] != null){
-		    trackFilters[activeTrack].disconnect();
-		    trackFilters[activeTrack].connect(trackCompressor);
-		}else if (trackReverbs[activeTrack] != null) {
-		    trackReverbs[activeTrack][1].disconnect();
-		    trackReverbs[activeTrack][1].connect(trackCompressor);
-		}else {
-		    inputNode.disconnect();
-		    inputNode.connect(trackCompressor);
-		}
-
-		 if (trackTremolos[activeTrack != null]) {
-		    trackCompressor.connect(trackTremolos[activeTrack][0]);
-		}else if (trackDelays[activeTrack] != null) {
-		    trackCompressor.connect(trackDelays[activeTrack][0]);
-		}else{
-		    trackCompressor.connect(volumeNode);
-		}
-
-		trackCompressors[activeTrack] = trackCompressor;
-		effects[activeTrack-1].push({
-		    type: "Compressor",
-		    threshold: "-24",
-		    ratio: "12",
-		    attack: ".003"
-		});
-		//console.log(effects[activeTrack-1]);
-	    }
-	    if(ui.draggable[0].textContent == "Tremolo"){
-
-		$("#tremoloRateKnob").val(1).trigger('change');
-		$("#tremoloDepthKnob").val(10).trigger('change');
-		var trackTremolo = createTrackTremolo();
-		var inputNode = trackInputNodes[activeTrack];
-		var volumeNode = trackVolumeGains[activeTrack];
-
-		if (trackCompressors[activeTrack] != null){
-		    trackCompressors[activeTrack].disconnect();
-		    trackCompressors[activeTrack].connect(trackTremolo[0]);
-		}else if(trackFilters[activeTrack] != null) {
-		    trackFilters[activeTrack].disconnect();
-		    trackFilters[activeTrack].connect(trackTremolo[0]);
-		}else if (trackReverbs[activeTrack] != null) {
-		    trackReverbs[activeTrack][1].disconnect();
-		    trackReverbs[activeTrack][1].connect(trackTremolo[0]);
-		}else {
-		    inputNode.disconnect();
-		    inputNode.connect(trackTremolo[0]);
-		}
-
-		if (trackDelays[activeTrack] != null) {
-		    trackTremolo[1].connect(trackDelays[activeTrack][0]);
-		}else{
-		    trackTremolo[1].connect(volumeNode);
-		}
-
-		trackTremolos[activeTrack] = trackTremolo;
-		effects[activeTrack-1].push({
-		    type: "Tremolo",
-		    rate: "1",
-		    depth: "10"
-		});
-		//console.log(effects[activeTrack-1]);
-	    }
-	    if(ui.draggable[0].textContent == "Delay"){
-		$("#delayTimeKnob").val(1).trigger('change');
-		$("#delayFeedbackKnob").val(20).trigger('change');
-		$("#delayWetDryKnob").val(50).trigger('change');
-		var trackDelay = createTrackDelay();
-		var inputNode = trackInputNodes[activeTrack];
-		var volumeNode = trackVolumeGains[activeTrack];
-
-		if (trackFilters[activeTrack] != null){
-		    trackFilters[activeTrack].disconnect();
-		    trackFilters[activeTrack].connect(trackDelay[0]);
-		}else if (trackReverbs[activeTrack] != null) {
-		    trackReverbs[activeTrack][1].disconnect();
-		    trackReverbs[activeTrack][1].connect(trackDelay[0]);
-		}else if(trackCompressors[activeTrack] != null) {
-		    trackCompressors[activeTrack].disconnect();
-		    trackCompressors[activeTrack].connect(trackDelay[0]);
-		}else if(trackTremolos[activeTrack] != null) {
-		    trackTremolos[activeTrack][1].disconnect();
-		    trackTremolos[activeTrack][1].connect(trackDelay[0]);
-		}else{
-		    inputNode.disconnect();
-		    inputNode.connect(trackDelay[0]);
-		}
-
-		trackDelay[1].connect(volumeNode);
-
-		trackDelays[activeTrack] = trackDelay;
-		effects[activeTrack-1].push({
-		    type: "Delay",
-		    time: "1",
-		    feedback: "20",
-		    wetDry: "50"
-		});
-	    }
-
-
-
-
-	}
-
     });
 
 
@@ -586,40 +580,40 @@ $(document).ready(function(){
     });
     $("#zoomIn").click(function(){
         $('body').trigger('zoomIn-event');
-	var WavesurferCanvases = $(".sample");
-	$.each(WavesurferCanvases,function(){
-	    var wavesurferCanvas = this;
-	    var oldWidth = wavesurferCanvas.width;
-	    var newWidth = oldWidth*2;
-	    wavesurferCanvas.width = newWidth;
-	    $($(wavesurferCanvas).parent()[0]).css("width",newWidth+"px");
-	    var oldLeft = parseInt($($(wavesurferCanvas).parent()[0]).css("left"));
-	    $($(wavesurferCanvas).parent()[0]).css("left",""+oldLeft*2+"px");
-	});
-	$.each(globalWavesurfers, function(){
-	    var wavesurfer = this;
-	    wavesurfer.drawer.clear();
-	    wavesurfer.drawer.width  = wavesurfer.drawer.width*2;
-	    wavesurfer.drawer.drawBuffer(wavesurfer.backend.currentBuffer);
-	});
+		var WavesurferCanvases = $(".sample");
+		$.each(WavesurferCanvases,function(){
+		    var wavesurferCanvas = this;
+		    var oldWidth = wavesurferCanvas.width;
+		    var newWidth = oldWidth*2;
+		    wavesurferCanvas.width = newWidth;
+		    $($(wavesurferCanvas).parent()[0]).css("width",newWidth+"px");
+		    var oldLeft = parseInt($($(wavesurferCanvas).parent()[0]).css("left"));
+		    $($(wavesurferCanvas).parent()[0]).css("left",""+oldLeft*2+"px");
+		});
+		$.each(globalWavesurfers, function(){
+		    var wavesurfer = this;
+		    wavesurfer.drawer.clear();
+		    wavesurfer.drawer.width  = wavesurfer.drawer.width*2;
+		    wavesurfer.drawer.drawBuffer(wavesurfer.backend.currentBuffer);
+		});
     });
     $("#zoomOut").click(function(){
-        $('body').trigger('zoomOut-event');
-	var WavesurferCanvases = $(".sample");
-	$.each(WavesurferCanvases,function(){
-	    var wavesurferCanvas = this;
-	    var oldWidth = wavesurferCanvas.width;
-	    wavesurferCanvas.width = oldWidth/2 + 1;
-	    $($(wavesurferCanvas).parent()[0]).css("width",oldWidth/2 + 1+"px");
-	    var oldLeft = parseInt($($(wavesurferCanvas).parent()[0]).css("left"));
-	    $($(wavesurferCanvas).parent()[0]).css("left",""+oldLeft/2+"px");
-	});
-	$.each(globalWavesurfers, function(){
-	    var wavesurfer = this;
-	    wavesurfer.drawer.clear();
-	    wavesurfer.drawer.width = wavesurfer.drawer.width/2 + 1;
-	    wavesurfer.drawer.drawBuffer(wavesurfer.backend.currentBuffer);
-	});
+	    $('body').trigger('zoomOut-event');
+		var WavesurferCanvases = $(".sample");
+		$.each(WavesurferCanvases,function(){
+		    var wavesurferCanvas = this;
+		    var oldWidth = wavesurferCanvas.width;
+		    wavesurferCanvas.width = oldWidth/2 + 1;
+		    $($(wavesurferCanvas).parent()[0]).css("width",oldWidth/2 + 1+"px");
+		    var oldLeft = parseInt($($(wavesurferCanvas).parent()[0]).css("left"));
+		    $($(wavesurferCanvas).parent()[0]).css("left",""+oldLeft/2+"px");
+		});
+		$.each(globalWavesurfers, function(){
+		    var wavesurfer = this;
+		    wavesurfer.drawer.clear();
+		    wavesurfer.drawer.width = wavesurfer.drawer.width/2 + 1;
+		    wavesurfer.drawer.drawBuffer(wavesurfer.backend.currentBuffer);
+		});
     });
     $("#trackEffectsClose").click(function(){
 	$("#trackEffects").css("display","none");
@@ -665,69 +659,79 @@ $(document).ready(function(){
 });
 
 function createTrack(trackNumber){
-    $("#tracks").append("<div class=\"row-fluid\" id=\"selectTrack"+trackNumber+"\"><div class=\"span2 trackBox\" style=\"height: 84px;\"><p style=\"margin: 0 0 0 0;\" id=\"track"+trackNumber+"title\">Track"+trackNumber+"</p><div style=\"margin: 5px 0 5px 0;\" id=\"volumeSlider"+trackNumber+"\"></div><div class=\"btn-toolbar\" style=\"margin-top: 0px;\"><div class=\"btn-group\"><button type=\"button\" class=\"btn btn-mini\" id = \"solo"+trackNumber+"\"><i class=\"icon-headphones\"></i></button><button type=\"button\" class=\"btn btn-mini\" id = \"mute"+trackNumber+"\"><i class=\"icon-volume-off\"></i></button></div><div class=\"btn-group\"><button type=\"button\" class=\"btn btn-mini\" data-toggle=\"button\" id = \"record"+trackNumber+"\"><i class=\"icon-plus-sign\"></i></button></div></div></div><div id=\"track"+trackNumber+"\" class=\"span10 track\"></div></div>");
+	//add html corresponding to audio track controls
+    $("#tracks").append("<div class=\"row-fluid\" id=\"selectTrack"+trackNumber+
+    					"\"><div class=\"span2 trackBox\" style=\"height: 84px;\"><p style=\"margin: 0 0 0 0;\" id=\"track"+
+    					trackNumber+"title\">Track "+trackNumber+"</p><div style=\"margin: 5px 0 5px 0;\" id=\"volumeSlider"+
+    					trackNumber+"\"></div><div class=\"btn-toolbar\" style=\"margin-top: 0px;\"><div class=\"btn-group\"><button type=\"button\" class=\"btn btn-mini\" id = \"solo"+
+    					trackNumber+"\"><i class=\"icon-headphones\"></i></button><button type=\"button\" class=\"btn btn-mini\" id = \"mute"+
+    					trackNumber+"\"><i class=\"icon-volume-off\"></i></button></div><div class=\"btn-group\"><button type=\"button\" class=\"btn btn-mini\" data-toggle=\"button\" id = \"record"+
+    					trackNumber+"\"><i class=\"icon-plus-sign\"></i></button></div></div></div><div id=\"track"+
+    					trackNumber+"\" class=\"span10 track\"></div></div>");
     if(effects[trackNumber-1] == null){
-	effects[trackNumber-1] = [];
+		effects[trackNumber-1] = [];
     }
+    
+    //init ui elements to default values
     $("#volumeSlider"+trackNumber).slider({
-	value: 80,
-	orientation: "horizontal",
-	range: "min",
-	min: 0,
-	max: 100,
-	animate: true,
-	slide: function( event, ui ) {
-	    var muteTrackNumber = $(this).attr('id').split('volumeSlider')[1];
-	    setTrackVolume(muteTrackNumber, ui.value );
-	}
+		value: 80,
+		orientation: "horizontal",
+		range: "min",
+		min: 0,
+		max: 100,
+		animate: true,
+		slide: function( event, ui ) {
+		    var muteTrackNumber = $(this).attr('id').split('volumeSlider')[1];
+		    setTrackVolume(muteTrackNumber, ui.value );
+		}
     });
     $("#selectTrack"+trackNumber).click(function(){
-	var printTrackNumber = $(this).attr('id').split('selectTrack')[1];
-	activeTrack = printTrackNumber;
-	//compensation for off by one (track1 = effects[0])
-	$(".effect").addClass("hidden");
-	$.each(effects[activeTrack-1], function(){
-	    var currentEffect = this;
-	    $("#"+currentEffect.type).removeClass("hidden");
-	    if(currentEffect.type == "Compressor"){
-		$("#compressorThresholdKnob").val(currentEffect.threshold).trigger('change');
-		$("#compressorRatioKnob").val(currentEffect.ratio).trigger('change');
-		$("#compressorAttackKnob").val(currentEffect.attack*1000).trigger('change');
-	    }
-	    if(currentEffect.type == "Filter"){
-		$("#filterCutoffKnob").val(currentEffect.cutoff).trigger('change');
-		$("#filterQKnob").val(currentEffect.q).trigger('change');
-		$("#filterTypeKnob").val(currentEffect.filterType).trigger('change');
-	    }
-	    if(currentEffect.type == "Reverb"){
-		$("#reverbWetDryKnob").val(currentEffect.wetDry);
-		$("#reverbIrSelectKnob").val(currentEffect.ir);
+		var printTrackNumber = $(this).attr('id').split('selectTrack')[1];
+		activeTrack = printTrackNumber;
+		//compensation for off by one (track1 = effects[0])
+		$(".effect").addClass("hidden");
+		$.each(effects[activeTrack-1], function(){
+		    var currentEffect = this;
+		    $("#"+currentEffect.type).removeClass("hidden");
+		    if(currentEffect.type == "Compressor"){
+			$("#compressorThresholdKnob").val(currentEffect.threshold).trigger('change');
+			$("#compressorRatioKnob").val(currentEffect.ratio).trigger('change');
+			$("#compressorAttackKnob").val(currentEffect.attack*1000).trigger('change');
+		    }
+		    if(currentEffect.type == "Filter"){
+			$("#filterCutoffKnob").val(currentEffect.cutoff).trigger('change');
+			$("#filterQKnob").val(currentEffect.q).trigger('change');
+			$("#filterTypeKnob").val(currentEffect.filterType).trigger('change');
+		    }
+		    if(currentEffect.type == "Reverb"){
+			$("#reverbWetDryKnob").val(currentEffect.wetDry);
+			$("#reverbIrSelectKnob").val(currentEffect.ir);
 
-	    }
-	    if(currentEffect.type == "Delay"){
-		$("#delayTimeKnob").val(currentEffect.time);
-		$("#delayFeedbackKnob").val(currentEffect.feedback);
-		$("#delayWetDryKnob").val(currentEffect.wetDry);
-	    }
-	    if(currentEffect.type == "Tremelo"){
-		$("#tremeloRateKnob").val(currentEffect.rate).trigger('change');
-		$("#tremeloDepthKnob").val(currentEffect.depth).trigger('change');
-	    }
-	});
-	Object.keys(effects[activeTrack-1]);
-	$("#trackEffectsHeader").html("Track "+printTrackNumber);
-	$("#trackEffects").css("display","block");
-	$("#masterControl").css("display","block");
+		    }
+		    if(currentEffect.type == "Delay"){
+			$("#delayTimeKnob").val(currentEffect.time);
+			$("#delayFeedbackKnob").val(currentEffect.feedback);
+			$("#delayWetDryKnob").val(currentEffect.wetDry);
+		    }
+		    if(currentEffect.type == "Tremelo"){
+			$("#tremeloRateKnob").val(currentEffect.rate).trigger('change');
+			$("#tremeloDepthKnob").val(currentEffect.depth).trigger('change');
+		    }
+		});
+		Object.keys(effects[activeTrack-1]); //A - what does this do?
+		$("#trackEffectsHeader").html("Track "+printTrackNumber);
+		$("#trackEffects").css("display","block");
+		$("#masterControl").css("display","block");
     });
     $("#mute"+trackNumber).click(function(){
-	$(this).button('toggle');
-	var muteTrackNumber = $(this).attr('id').split('mute')[1];
-	$('body').trigger('mute-event', muteTrackNumber);
+		$(this).button('toggle');
+		var muteTrackNumber = $(this).attr('id').split('mute')[1];
+		$('body').trigger('mute-event', muteTrackNumber);
     });
-     $("#solo"+trackNumber).click(function(){
-	$(this).button('toggle');
-	var soloTrackNumber = $(this).attr('id').split('solo')[1];
-	$('body').trigger('solo-event', soloTrackNumber);
+    $("#solo"+trackNumber).click(function(){
+		$(this).button('toggle');
+		var soloTrackNumber = $(this).attr('id').split('solo')[1];
+		$('body').trigger('solo-event', soloTrackNumber);
     });
     $("#record"+trackNumber).click(function(){
 	var recordTrackNumber = $(this).attr('id').split('record')[1];
@@ -868,12 +872,12 @@ function createTrack(trackNumber){
 
 	    var wavesurfer = Object.create(WaveSurfer);
 	    wavesurfer.init({
-		canvas: canvas,
-		waveColor: 'violet',
-		progressColor: 'purple',
-		loadingColor: 'purple',
-		cursorColor: 'navy',
-		audioContext: ac
+			canvas: canvas,
+			waveColor: 'violet',
+			progressColor: 'purple',
+			loadingColor: 'purple',
+			cursorColor: 'navy',
+			audioContext: ac
 	    });
 	    wavesurfer.load(sampleURL);
 	    globalWavesurfers.push(wavesurfer);
